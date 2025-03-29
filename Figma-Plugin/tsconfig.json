@@ -1,15 +1,25 @@
-
 {
-  "compilerOptions": {
-    "target": "es6",
-    "lib": ["es6", "ESNext"],
-    "strict": true,
-    "typeRoots": [
-      "./node_modules/@types",
-      "./node_modules/@figma"
-    ],
-    "module": "CommonJS", // This can also be "esnext" if you prefer using ES modules
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true
-  }
+    "compilerOptions": {
+        "target": "es6",
+        "lib": [
+            "es6",
+            "ESNext"
+        ],
+        "paths": {
+            "@figma/*": [
+                "./node_modules/@figma/*"
+            ],
+            "@types/*": [
+                "./node_modules/@types/*"
+            ]
+        },
+        "typeRoots": [
+            "./node_modules/@types",
+            "./node_modules/@figma"
+        ],
+        "module": "ESNext",
+        "strict": true,
+        "jsx": "react",
+        "esModuleInterop": true
+    }
 }

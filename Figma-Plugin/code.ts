@@ -1,27 +1,21 @@
 figma.showUI(__html__, { width: 430, height: 560 });
+
 figma.ui.onmessage = async (msg: { type: string; value: string }) => {
-  switch (msg.type) {
-    case "select-frame":
-      await handleSelectFrameMessage();
-      break;
-    case "create-palette":
-      await handleCreatePaletteMessage();
-      break;
-    case "assign-color":
-      await handleAssignColorMessage(msg);
-      break;
-    case "generate-palette-ai":
-      await handleCreatePaletteAiVersion(msg.value);
-      break;
-    case "recolor-frame-ai":
-      await handleAssignColorAIVersion(msg.value);
-      break;
-    default:
-      console.log("Unknown message type: " + msg.type);
+  if (msg.type === "create-palette") {
+    await handleCreatePaletteMessage();
+  } else if (msg.type === "assign-color") {
+    await handleAssignColorMessage(msg);
+  } else if (msg.type === "generate-palette-ai") {
+    await handleCreatePaletteAiVersion(msg.value);
+  } else if (msg.type === "recolor-frame-ai") {
+    await handleAssignColorAIVersion(msg.value);
   }
 };
 
 // Function to handle the 'select-frame' message
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 async function handleSelectFrameMessage() {
   const selectedFrames = figma.currentPage.selection.filter(
     (node) => node.type === "FRAME"
@@ -31,12 +25,21 @@ async function handleSelectFrameMessage() {
     figma.notify("Please select a frame on the canvas.");
     return;
   }
+
+  // Assuming you want to work with the first selected frame
   const selectedFrame = selectedFrames[selectedFrames.length - 1] as FrameNode;
+
   figma.notify(`Frame "${selectedFrame.name}" selected.`);
+  console.log("Frame Selected: " + selectedFrame.name);
+
+  // Store the selected frame globally if needed
   figma.root.setPluginData("selectedFrameId", selectedFrame.id);
 }
 
 // Function to handle the 'create-palette' message
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 async function handleCreatePaletteMessage() {
   handleSelectFrameMessage();
   const frameId = figma.root.getPluginData("selectedFrameId");
@@ -54,15 +57,8 @@ async function handleCreatePaletteMessage() {
     }
 
     const frame = node as FrameNode;
-    console.log(
-      "==================================================================/////***////"
-    );
-    console.log(`Cloned Frame ${{ frame }}`);
-
-    // Export the frame as JPEG
     const jpegBytes = await exportFrameAsJPEG(frame);
-
-    // Modify the type of colorPalettes to expect an array of arrays
+    console.log("JPEG Bytes:", jpegBytes); // Log the output to verify
     try {
       const colorPalettes = await sendToAPI(jpegBytes);
       console.log("TEST palettes:", colorPalettes); // Ensure this logs the correct structure
@@ -145,10 +141,6 @@ async function selectFrameLayers() {
   figma.notify(`Frame "${frame.name}" selected.`);
 
   const allLayers = frame.findAll().reverse(); // Find all layers within the frame
-  console.log(
-    "==================================================================/////***////"
-  );
-  console.log(allLayers);
 
   // Convert allLayers to include the same properties as in handleAssignColorMessage
   const layers = allLayers.map((layer, idx) => {
@@ -165,7 +157,7 @@ async function handleAssignColorAIVersion(prompt: string) {
   try {
     const layers = await selectFrameLayers();
     const colorCodesList = await fetchAIColorPalette(prompt);
-    assignColorsToLayers(layers, colorCodesList, 1);
+    assignColorsToLayers(layers, colorCodesList, 3);
   } catch (error) {
     console.error(error);
     figma.notify("An error occurred while sending the request to the API.");
@@ -196,7 +188,10 @@ async function sendToAPI(imageData: Uint8Array): Promise<string[][]> {
   }
 
   const result = await response.json();
+  //console.log("API response:", result); // Log the API response
+  // console.log("Color palettes:", result.color_palettes);
   figma.notify("Image exported and palette received successfully.");
+  //  console.log("Color palettes from API:", result.color_palettes);
   return result.color_palettes; // Change this to get the array of arrays from the API
 }
 
@@ -362,6 +357,8 @@ async function handleAssignColorMessage(msg: { type: string }) {
     try {
       // Send the JPEG image data to the API and wait for the palettes
       const colorPalettes = await sendToAPI(jpegBytes);
+      console.log(colorPalettes);
+
       if (!Array.isArray(colorPalettes) || colorPalettes.length === 0) {
         figma.notify("No palettes received from the API.");
         return;
@@ -382,13 +379,13 @@ async function handleAssignColorMessage(msg: { type: string }) {
         newFrame.x = frame.x + (index + 1) * offsetX;
 
         newFrame.name = `Palette Frame ${index + 1}`;
-        // console.log(`Frame ${newFrame.name} created`);
+        console.log(`Frame ${newFrame.name} created`);
 
         const allLayers = newFrame.findAll();
         const layers = allLayers.map((layer, idx) => {
           const newName = `${layer.name}_${index}_${idx}`; // Create a new unique name
           layer.name = newName; // Update the layer name directly
-          //   console.log(`Updated Layer Name: ${newName}`); // Log the updated name
+          console.log(`Updated Layer Name: ${newName}`); // Log the updated name
 
           // Use the getLayerColor function to extract the color from the layer
           const color = getLayerColor(layer);
@@ -398,7 +395,7 @@ async function handleAssignColorMessage(msg: { type: string }) {
         layers.reverse();
 
         // Log the palette being applied to each frame
-        // console.log(`Applying colors to Frame ${newFrame.name}:`, palette);
+        console.log(`Applying colors to Frame ${newFrame.name}:`, palette);
 
         assignColorsToLayers(layers, palette, index);
 
@@ -429,9 +426,9 @@ async function handleAssignColorMessage(msg: { type: string }) {
 
           rect.name = `Color ${colorIndex + 1} - ${color}`;
           figma.currentPage.appendChild(rect);
-          //   console.log(
-          //     `Added color display for ${color} under Frame ${newFrame.name}`
-          //   );
+          console.log(
+            `Added color display for ${color} under Frame ${newFrame.name}`
+          );
         });
       });
 
@@ -462,7 +459,6 @@ async function assignColorsToLayers(
     "http://localhost:5000/assign_colors_pl",
     "http://localhost:5000/assign_colors_sq",
   ];
-
   const palette = colorPalette.map(hexToRgbValues);
   console.log("Layers", layers);
   try {
@@ -482,10 +478,8 @@ async function assignColorsToLayers(
     }
 
     const assignment = await response.json();
-    console.log("Color Assignment:", assignment);
-
     for (const layerName in assignment) {
-      if (assignment.hasOwnProperty(layerName)) {
+      if (Object.prototype.hasOwnProperty.call(assignment, layerName)) {
         const colorValues = assignment[layerName]; // Get the RGB values for the current layer
 
         console.log("Color Values:", colorValues);
@@ -566,21 +560,20 @@ async function assignColorsToLayers(
                 fills[0] = newGradientFill;
               } else if (fill.type === "IMAGE") {
                 // If it's an image, you can apply some logic if needed, but usually, we leave image fills intact
-                // console.log(
-                //   `Layer "${layerName}" has an image fill, skipping color update.`
-                // );
+                console.log(
+                  `Layer "${layerName}" has an image fill, skipping color update.`
+                );
               }
             });
             // Assign the modified fills back to the layer
             figmaLayer.fills = fills;
           } else {
-            // console.log(`Layer "${layerName}" has no fills.`);
+            console.log(`Layer "${layerName}" has no fills.`);
           }
 
-          console
-            .log
-            // `Layer "${layerName}" color updated to RGB: ${r}, ${g}, ${b}`
-            ();
+          console.log(
+            `Layer "${layerName}" color updated to RGB: ${r}, ${g}, ${b}`
+          );
         } else if (figmaLayer && "stroke" in figmaLayer) {
           // For layers with strokes (e.g., vectors), update the stroke color
           const strokes: Paint[] = JSON.parse(
@@ -599,13 +592,13 @@ async function assignColorsToLayers(
             figmaLayer.stroke = strokes; // Assign the modified strokes back to the layer
           }
 
-          //   console.log(
-          //     `Layer "${layerName}" stroke color updated to RGB: ${r}, ${g}, ${b}`
-          //   );
+          console.log(
+            `Layer "${layerName}" stroke color updated to RGB: ${r}, ${g}, ${b}`
+          );
         } else {
-          //   console.log(
-          //     `Layer "${layerName}" not found or does not support fills or strokes.`
-          //   );
+          console.log(
+            `Layer "${layerName}" not found or does not support fills or strokes.`
+          );
         }
       }
     }
@@ -629,106 +622,4 @@ function blendColors(
     g: originalColor.g * (1 - blendFactor) + newColor.g * blendFactor,
     b: originalColor.b * (1 - blendFactor) + newColor.b * blendFactor,
   };
-}
-
-// Function to calculate the average color of the layers
-function calculateAverageColor(layers: SceneNode[]): RGB {
-  let totalColor = { r: 0, g: 0, b: 0 };
-  let count = 0;
-
-  layers.forEach((layer) => {
-    if (
-      "fills" in layer &&
-      Array.isArray(layer.fills) &&
-      layer.fills.length > 0
-    ) {
-      const fill = layer.fills[0] as SolidPaint;
-      if (fill.type === "SOLID") {
-        totalColor.r += fill.color.r;
-        totalColor.g += fill.color.g;
-        totalColor.b += fill.color.b;
-        count++;
-      }
-    }
-  });
-
-  return count > 0
-    ? {
-        r: totalColor.r / count,
-        g: totalColor.g / count,
-        b: totalColor.b / count,
-      }
-    : { r: 0, g: 0, b: 0 };
-}
-
-// Function to calculate the Euclidean distance between two colors
-function getColorDistance(color1: RGB, color2: RGB): number {
-  return Math.sqrt(
-    Math.pow(color1.r - color2.r, 2) +
-      Math.pow(color1.g - color2.g, 2) +
-      Math.pow(color1.b - color2.b, 2)
-  );
-}
-
-// Function to find the closest color from the palette
-function findClosestColor(layerColor: RGB, palette: string[]): RGB {
-  let closestColor: RGB = { r: 0, g: 0, b: 0 };
-  let minDistance = Infinity;
-
-  palette.forEach((colorHex) => {
-    const paletteColor = hexToRgb(colorHex);
-    const distance = getColorDistance(layerColor, paletteColor);
-    if (distance < minDistance) {
-      closestColor = paletteColor;
-      minDistance = distance;
-    }
-  });
-
-  return closestColor;
-}
-
-// Function to assign colors to layers based on proximity to average color
-async function assignColorsBasedOnProximity(
-  layers: { name: string }[],
-  colorPalette: string[]
-) {
-  // Extract the layer names
-  const layerNames = layers.map((layer) => layer.name);
-
-  // Retrieve all SceneNode layers that match the names provided
-  const sceneNodes: SceneNode[] = figma.currentPage.findAll(
-    (node) => layerNames.includes(node.name) && "fills" in node
-  ) as SceneNode[];
-
-  if (sceneNodes.length === 0) {
-    figma.notify("No matching layers with color fills found by name.");
-    return;
-  }
-
-  // Calculate the average color for these layers
-  const averageColor = calculateAverageColor(sceneNodes);
-
-  // Assign the closest color to each layer
-  sceneNodes.forEach((layer) => {
-    if (
-      "fills" in layer &&
-      Array.isArray(layer.fills) &&
-      layer.fills.length > 0
-    ) {
-      const layerFill = layer.fills[0] as SolidPaint;
-      if (layerFill.type === "SOLID") {
-        const layerColor = layerFill.color;
-        const closestColor = findClosestColor(layerColor, colorPalette);
-
-        // Apply the closest color to the layer
-        layer.fills = [{ type: "SOLID", color: closestColor }];
-      } else if (layerFill.type === "SOLID") {
-      }
-      //
-
-      //
-    }
-  });
-
-  figma.notify("Colors assigned based on proximity to average color!");
 }

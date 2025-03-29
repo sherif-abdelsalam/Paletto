@@ -10,24 +10,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 figma.showUI(__html__, { width: 430, height: 560 });
 figma.ui.onmessage = (msg) => __awaiter(void 0, void 0, void 0, function* () {
-    switch (msg.type) {
-        case "select-frame":
-            yield handleSelectFrameMessage();
-            break;
-        case "create-palette":
-            yield handleCreatePaletteMessage();
-            break;
-        case "assign-color":
-            yield handleAssignColorMessage(msg);
-            break;
-        case "generate-palette-ai":
-            yield handleCreatePaletteAiVersion(msg.value);
-            break;
-        case "recolor-frame-ai":
-            yield handleAssignColorAIVersion(msg.value);
-            break;
-        default:
-            console.log("Unknown message type: " + msg.type);
+    if (msg.type === "create-palette") {
+        yield handleCreatePaletteMessage();
+    }
+    else if (msg.type === "assign-color") {
+        yield handleAssignColorMessage(msg);
+    }
+    else if (msg.type === "generate-palette-ai") {
+        yield handleCreatePaletteAiVersion(msg.value);
+    }
+    else if (msg.type === "recolor-frame-ai") {
+        yield handleAssignColorAIVersion(msg.value);
     }
 });
 // Function to handle the 'select-frame' message
@@ -42,9 +35,8 @@ function handleSelectFrameMessage() {
         }
         // Assuming you want to work with the first selected frame
         const selectedFrame = selectedFrames[selectedFrames.length - 1];
-        console.log("==================================================================/////***////");
-        console.log(`Cloned Frame ${{ selectedFrame }}`);
         figma.notify(`Frame "${selectedFrame.name}" selected.`);
+        console.log("Frame Selected: " + selectedFrame.name);
         // Store the selected frame globally if needed
         figma.root.setPluginData("selectedFrameId", selectedFrame.id);
     });
@@ -67,11 +59,8 @@ function handleCreatePaletteMessage() {
                 return;
             }
             const frame = node;
-            console.log("==================================================================/////***////");
-            console.log(`Cloned Frame ${{ frame }}`);
-            // Export the frame as JPEG
             const jpegBytes = yield exportFrameAsJPEG(frame);
-            // Modify the type of colorPalettes to expect an array of arrays
+            console.log("JPEG Bytes:", jpegBytes); // Log the output to verify
             try {
                 const colorPalettes = yield sendToAPI(jpegBytes);
                 console.log("TEST palettes:", colorPalettes); // Ensure this logs the correct structure
@@ -152,8 +141,6 @@ function selectFrameLayers() {
         const frame = node;
         figma.notify(`Frame "${frame.name}" selected.`);
         const allLayers = frame.findAll().reverse(); // Find all layers within the frame
-        console.log("==================================================================/////***////");
-        console.log(allLayers);
         // Convert allLayers to include the same properties as in handleAssignColorMessage
         const layers = allLayers.map((layer, idx) => {
             const newName = `${layer.name}_${idx}`; // Create a unique name based on the index
@@ -169,7 +156,7 @@ function handleAssignColorAIVersion(prompt) {
         try {
             const layers = yield selectFrameLayers();
             const colorCodesList = yield fetchAIColorPalette(prompt);
-            assignColorsToLayers(layers, colorCodesList, 1);
+            assignColorsToLayers(layers, colorCodesList, 3);
         }
         catch (error) {
             console.error(error);
@@ -201,7 +188,10 @@ function sendToAPI(imageData) {
             throw new Error(`Failed to send image to API: ${response.statusText}, ${errorText}`);
         }
         const result = yield response.json();
+        //console.log("API response:", result); // Log the API response
+        // console.log("Color palettes:", result.color_palettes);
         figma.notify("Image exported and palette received successfully.");
+        //  console.log("Color palettes from API:", result.color_palettes);
         return result.color_palettes; // Change this to get the array of arrays from the API
     });
 }
@@ -341,6 +331,7 @@ function handleAssignColorMessage(msg) {
             try {
                 // Send the JPEG image data to the API and wait for the palettes
                 const colorPalettes = yield sendToAPI(jpegBytes);
+                console.log(colorPalettes);
                 if (!Array.isArray(colorPalettes) || colorPalettes.length === 0) {
                     figma.notify("No palettes received from the API.");
                     return;
@@ -357,19 +348,19 @@ function handleAssignColorMessage(msg) {
                         : paletteWidth + minSpacing + 300;
                     newFrame.x = frame.x + (index + 1) * offsetX;
                     newFrame.name = `Palette Frame ${index + 1}`;
-                    // console.log(`Frame ${newFrame.name} created`);
+                    console.log(`Frame ${newFrame.name} created`);
                     const allLayers = newFrame.findAll();
                     const layers = allLayers.map((layer, idx) => {
                         const newName = `${layer.name}_${index}_${idx}`; // Create a new unique name
                         layer.name = newName; // Update the layer name directly
-                        //   console.log(`Updated Layer Name: ${newName}`); // Log the updated name
+                        console.log(`Updated Layer Name: ${newName}`); // Log the updated name
                         // Use the getLayerColor function to extract the color from the layer
                         const color = getLayerColor(layer);
                         return { name: newName, color: color };
                     });
                     layers.reverse();
                     // Log the palette being applied to each frame
-                    // console.log(`Applying colors to Frame ${newFrame.name}:`, palette);
+                    console.log(`Applying colors to Frame ${newFrame.name}:`, palette);
                     assignColorsToLayers(layers, palette, index);
                     // Load font before creating the text node
                     yield figma.loadFontAsync({ family: "Inter", style: "Regular" });
@@ -394,9 +385,7 @@ function handleAssignColorMessage(msg) {
                         ];
                         rect.name = `Color ${colorIndex + 1} - ${color}`;
                         figma.currentPage.appendChild(rect);
-                        //   console.log(
-                        //     `Added color display for ${color} under Frame ${newFrame.name}`
-                        //   );
+                        console.log(`Added color display for ${color} under Frame ${newFrame.name}`);
                     });
                 }));
                 figma.notify("Color assignment completed.");
@@ -440,9 +429,8 @@ function assignColorsToLayers(layers, colorPalette, index) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const assignment = yield response.json();
-            console.log("Color Assignment:", assignment);
             for (const layerName in assignment) {
-                if (assignment.hasOwnProperty(layerName)) {
+                if (Object.prototype.hasOwnProperty.call(assignment, layerName)) {
                     const colorValues = assignment[layerName]; // Get the RGB values for the current layer
                     console.log("Color Values:", colorValues);
                     console.log("Layer Name:", layerName);
@@ -500,19 +488,16 @@ function assignColorsToLayers(layers, colorPalette, index) {
                                 }
                                 else if (fill.type === "IMAGE") {
                                     // If it's an image, you can apply some logic if needed, but usually, we leave image fills intact
-                                    // console.log(
-                                    //   `Layer "${layerName}" has an image fill, skipping color update.`
-                                    // );
+                                    console.log(`Layer "${layerName}" has an image fill, skipping color update.`);
                                 }
                             });
                             // Assign the modified fills back to the layer
                             figmaLayer.fills = fills;
                         }
                         else {
-                            // console.log(`Layer "${layerName}" has no fills.`);
+                            console.log(`Layer "${layerName}" has no fills.`);
                         }
-                        console
-                            .log();
+                        console.log(`Layer "${layerName}" color updated to RGB: ${r}, ${g}, ${b}`);
                     }
                     else if (figmaLayer && "stroke" in figmaLayer) {
                         // For layers with strokes (e.g., vectors), update the stroke color
@@ -524,14 +509,10 @@ function assignColorsToLayers(layers, colorPalette, index) {
                             strokes[0] = newStroke;
                             figmaLayer.stroke = strokes; // Assign the modified strokes back to the layer
                         }
-                        //   console.log(
-                        //     `Layer "${layerName}" stroke color updated to RGB: ${r}, ${g}, ${b}`
-                        //   );
+                        console.log(`Layer "${layerName}" stroke color updated to RGB: ${r}, ${g}, ${b}`);
                     }
                     else {
-                        //   console.log(
-                        //     `Layer "${layerName}" not found or does not support fills or strokes.`
-                        //   );
+                        console.log(`Layer "${layerName}" not found or does not support fills or strokes.`);
                     }
                 }
             }
@@ -551,83 +532,4 @@ function blendColors(originalColor, newColor, position) {
         g: originalColor.g * (1 - blendFactor) + newColor.g * blendFactor,
         b: originalColor.b * (1 - blendFactor) + newColor.b * blendFactor,
     };
-}
-// Function to calculate the average color of the layers
-function calculateAverageColor(layers) {
-    let totalColor = { r: 0, g: 0, b: 0 };
-    let count = 0;
-    layers.forEach((layer) => {
-        if ("fills" in layer &&
-            Array.isArray(layer.fills) &&
-            layer.fills.length > 0) {
-            const fill = layer.fills[0];
-            if (fill.type === "SOLID") {
-                totalColor.r += fill.color.r;
-                totalColor.g += fill.color.g;
-                totalColor.b += fill.color.b;
-                count++;
-            }
-        }
-    });
-    return count > 0
-        ? {
-            r: totalColor.r / count,
-            g: totalColor.g / count,
-            b: totalColor.b / count,
-        }
-        : { r: 0, g: 0, b: 0 };
-}
-// Function to calculate the Euclidean distance between two colors
-function getColorDistance(color1, color2) {
-    return Math.sqrt(Math.pow(color1.r - color2.r, 2) +
-        Math.pow(color1.g - color2.g, 2) +
-        Math.pow(color1.b - color2.b, 2));
-}
-// Function to find the closest color from the palette
-function findClosestColor(layerColor, palette) {
-    let closestColor = { r: 0, g: 0, b: 0 };
-    let minDistance = Infinity;
-    palette.forEach((colorHex) => {
-        const paletteColor = hexToRgb(colorHex);
-        const distance = getColorDistance(layerColor, paletteColor);
-        if (distance < minDistance) {
-            closestColor = paletteColor;
-            minDistance = distance;
-        }
-    });
-    return closestColor;
-}
-// Function to assign colors to layers based on proximity to average color
-function assignColorsBasedOnProximity(layers, colorPalette) {
-    return __awaiter(this, void 0, void 0, function* () {
-        // Extract the layer names
-        const layerNames = layers.map((layer) => layer.name);
-        // Retrieve all SceneNode layers that match the names provided
-        const sceneNodes = figma.currentPage.findAll((node) => layerNames.includes(node.name) && "fills" in node);
-        if (sceneNodes.length === 0) {
-            figma.notify("No matching layers with color fills found by name.");
-            return;
-        }
-        // Calculate the average color for these layers
-        const averageColor = calculateAverageColor(sceneNodes);
-        // Assign the closest color to each layer
-        sceneNodes.forEach((layer) => {
-            if ("fills" in layer &&
-                Array.isArray(layer.fills) &&
-                layer.fills.length > 0) {
-                const layerFill = layer.fills[0];
-                if (layerFill.type === "SOLID") {
-                    const layerColor = layerFill.color;
-                    const closestColor = findClosestColor(layerColor, colorPalette);
-                    // Apply the closest color to the layer
-                    layer.fills = [{ type: "SOLID", color: closestColor }];
-                }
-                else if (layerFill.type === "SOLID") {
-                }
-                //
-                //
-            }
-        });
-        figma.notify("Colors assigned based on proximity to average color!");
-    });
 }

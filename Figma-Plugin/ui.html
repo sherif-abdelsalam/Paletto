@@ -1,149 +1,214 @@
 <style>
-  * {
-    box-sizing: border-box;
-  }
+  @import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap");
 
-  body {
+  * {
     margin: 0;
     padding: 0;
-    font-family: "Arial", sans-serif;
-    background-color: #e8e6f0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
+  }
+  :root {
+    --secondary-color: #fb6564;
+    --primary-color: #6d2edc;
+    --text-secondary-color: #111111;
+    --text-main-color: #6c2cda;
+    --gray-color: #c0bcc8;
+    --gray-text-color: #857e92;
   }
 
   .container {
-    width: 400px;
-    padding: 20px;
-    border: 5px solid #8e79c1;
-    background-color: #f4f4f8;
+    display: flex;
+    margin: 22px;
+    flex-direction: column;
+    border: #111111 1px solid;
+    padding: 22px;
     border-radius: 12px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    text-align: center;
+    border: solid 2px #6e2edc34;
   }
-
-  .logo {
-    font-size: 32px;
-    color: #8e79c1;
-    font-weight: bold;
-    margin-bottom: 5px;
+  .logo-desc-sec {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+  }
+  .logo-desc-sec img {
+    width: 160px;
   }
 
   .subtitle {
-    color: #8e79c1;
     font-size: 14px;
-    margin-bottom: 30px;
-    font-style: italic;
+    font-weight: 500;
+    color: var(--primary-color);
   }
 
-  .section-title {
-    font-size: 18px;
-    color: #5d4b8d;
-    font-weight: bold;
-    margin-bottom: 10px;
+  .recoloring-object-ai {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
+    gap: 8px;
+    margin-top: 30px;
   }
-
-  .add-margin-bottom {
-    margin-bottom: 25px;
+  .recolor-icon {
+    width: 20px;
   }
-  .section-title:before {
-    content: "▶";
-    font-size: 14px;
-    margin-right: 5px;
-  }
-  .description {
-    font-size: 14px;
-    font-style: italic;
-    color: #7c7a92;
-    margin-left: 5px;
-  }
-
-  button {
-    font-size: 16px;
+  .section-title {
+    font-size: 15px;
     font-weight: 600;
-    padding: 10px 20px;
-    color: #fff;
-    background-color: #8e79c1;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-bottom: 10px;
-    width: 100%;
-    transition: background-color 0.3s;
+    color: var(--primary-color);
   }
 
-  button:hover {
-    background-color: #5d4b8d;
+  .description {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--gray-text-color);
   }
 
-  .input-wrapper {
+  .generate-palette-btn {
+    margin-top: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 20px;
+    background-color: var(--primary-color);
+    gap: 12px;
+    padding: 12px;
+    border-radius: 8px;
   }
 
-  input[type="text"] {
-    height: 36px;
-    padding: 10px;
-    padding-right: 0px;
-    width: 100%;
-    max-width: 370px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
+  .generate-palette-btn button,
+  .recolor-btn button {
+    background: none;
+    border: none;
+    color: white;
     font-size: 14px;
-  }
-  #generate-palette-ai,
-  #generate-palette-main {
-    background-color: white;
-    border: #5d4b8d;
-    border-style: solid;
-    border-width: 2px;
-    border-radius: 5px;
-    cursor: pointer;
-    color: #5d4b8d;
-    font-size: 16px;
     font-weight: 600;
+    letter-spacing: 0.5px;
   }
-  #generate-palette-ai:hover,
-  #generate-palette-main:hover {
-    background-color: #5d4b8d;
-    color: #ddd;
+  .recolor-btn button {
+    color: var(--primary-color);
+  }
+  .generate-palette-btn img,
+  .recolor-btn img {
+    width: 18px;
+  }
+  .recolor-btn {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: var(--primary-color) solid 2px;
+    gap: 12px;
+    padding: 10px;
+    border-radius: 8px;
+  }
+  .input-wrapper {
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    border: var(--gray-color) solid 1px;
+    border-radius: 8px;
+  }
+  .input-wrapper:focus-within {
+    border: var(--primary-color) solid 1px;
+  }
+
+  .input-wrapper input {
+    background: none;
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 14px;
   }
 </style>
 
 <div class="container">
-  <div class="logo">Paletto</div>
-  <div class="subtitle">Intelligent Color Assistant</div>
+  <div class="logo-desc-sec">
+    <img
+      src="https://res.cloudinary.com/dvfebj6lc/image/upload/v1743206761/logo_rz6vzu.svg"
+      alt="ddd"
+      width="120"
+    />
+
+    <div class="subtitle">Intelligent Color Assistant</div>
+  </div>
 
   <!-- First Section -->
   <div class="add-margin-bottom">
-    <div class="section-title">
-      Recoloring <span class="description">(Based on Frame Main Object) </span>
+    <div class="recoloring-object-ai">
+      <img
+        class="recolor-icon"
+        src="https://res.cloudinary.com/dvfebj6lc/image/upload/v1743207064/hugeicons_brush_oaeosa.svg"
+        alt="ddd"
+        width="40"
+      />
+      <div class="section-title">
+        Recoloring
+        <span class="description">(Based on Frame Main Object) </span>
+      </div>
     </div>
 
-    <button id="generate-palette-main">Generate Color Palette</button>
-    <button id="recolor-frame-main">Recolor Your Frame</button>
+    <div class="generate-palette-btn">
+      <img
+        src="https://res.cloudinary.com/dvfebj6lc/image/upload/v1743207064/material-symbols_palette-outline_hw8omj.svg"
+        alt=" generate palette"
+        width="40"
+      />
+      <button id="generate-palette-main">Generate Color Palette</button>
+    </div>
+    <div class="recolor-btn">
+      <img
+        src="https://res.cloudinary.com/dvfebj6lc/image/upload/v1743207064/tabler_frame_ddl2lz.svg"
+        alt="Recolor Your Frame"
+      />
+      <button id="recolor-frame-main">Recolor Your Frame</button>
+    </div>
   </div>
 
   <!-- Second Section -->
-  <div class="section-title">
-    Recoloring <span class="description">(AI-Based Suggestion) </span>
+  <div class="recoloring-object-ai">
+    <img
+      class="recolor-icon"
+      src="https://res.cloudinary.com/dvfebj6lc/image/upload/v1743207064/hugeicons_brush_oaeosa.svg"
+      alt="recolor"
+    />
+    <div class="section-title">
+      Recoloring <span class="description">(AI-Based Suggestion) </span>
+    </div>
   </div>
 
   <!-- Text Input and Arrow -->
   <div class="input-wrapper">
-    <input type="text" id="user-text" placeholder="Enter your text here" />
+    <img
+      src="https://res.cloudinary.com/dvfebj6lc/image/upload/v1743207064/tabler_message-chatbot_gc0gqi.svg"
+      alt="type here"
+    />
+    <input
+      type="text"
+      id="user-text"
+      placeholder="Type a prompt for AI-generated colors"
+    />
     <!-- <span class="input-arrow">➤</span> -->
   </div>
 
-  <button id="generate-palette-ai">Generate Color Palette</button>
-  <button id="recolor-frame-ai">Recolor Your Frame</button>
+  <!-- Generate Color Palette Button -->
+  <div class="generate-palette-btn">
+    <img
+      src="https://res.cloudinary.com/dvfebj6lc/image/upload/v1743207064/material-symbols_palette-outline_hw8omj.svg"
+      alt=" generate palette"
+      width="40"
+    />
+    <button id="generate-palette-ai">Generate Color Palette</button>
+  </div>
+
+  <div class="recolor-btn">
+    <img
+      src="https://res.cloudinary.com/dvfebj6lc/image/upload/v1743207064/tabler_frame_ddl2lz.svg"
+      alt="Recolor Your Frame"
+    />
+    <button id="recolor-frame-ai">Recolor Your Frame</button>
+  </div>
 </div>
 
 <!--///////////////////////////////////////////////////////////////////////////////////////////////////-->
